@@ -173,7 +173,8 @@ if __name__ == '__main__':
     #plt.title('Predicted windspeed for 20 years')
     #plt.show()
     pd.set_option('display.max_rows', None),
+    ##output function to csv file##
     lt_df_prediction.to_csv('prediction_time_series3.csv'),
-                            
+    ##print function to check if output is correct##      
     print(lt_df_prediction)
     
