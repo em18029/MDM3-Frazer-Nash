@@ -9,6 +9,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+import numpy as np
+from cmath import pi
 
 
 def make_datetime_index(df):
@@ -88,7 +90,7 @@ def get_dict_with_dfs_for_each_sector(df, **kwargs):
         sectored_dfs[sector] = copy.deepcopy(df.query(query))
     # from pprint import pprint
     # pprint(sector_dict)
-    print(sectored_dfs)
+    #print(sectored_dfs)
     return sectored_dfs
 
 
@@ -153,34 +155,12 @@ def make_a_long_term_prediction(long_term_df, regressor_dict):
     lt_df_prediction = pd.concat(predicted_sect_speed.values()).sort_index()
     return lt_df_prediction, predicted_sect_speed
 
-def measure_uncertainty_at_speeds():
-    return
+def main_industry_standard(df, reanalysis):
 
-def find_power_for_speed():
-    """
-    P = k Cp 1/2 p A V^3
-    P = Power output, kilowatts
-    Cp = Maximum power coefficient, ranging from 0.25 to 0.45, dimension less (theoretical maximum = 0.59)
-    p = Air density, lb/ft3
-    A = Rotor swept area, ft2 or π D2/4 (D is the rotor diameter in ft, π = 3.1416)
-    V = Wind speed, mph
-    k = 0.000133  A constant to yield power in kilowatts.
-    (Multiplying the above kilowatt answer by 1.340 converts it to horse- power [i.e., 1 kW = 1.340 horsepower]).
-    """
+    regressor_dict, sd, ccd = find_sectorial_correlations(df, 'Measured_Direction')
+    lt_df_prediction, predicted_sect_speed = make_a_long_term_prediction(reanalysis, regressor_dict)
 
-    return
-
-def update_uncertainty(inputs):
-    return
-
-def additional_prediction_improvement():
-    return
-
-def calculate_p50():
-    return
-
-def calculate_p90():
-    return
+    return lt_df_prediction, predicted_sect_speed
 
 
 if __name__ == '__main__':
@@ -201,7 +181,8 @@ if __name__ == '__main__':
     regressor_dict, sd, ccd = find_sectorial_correlations(df, 'Measured_Direction')
     lt_df_prediction, predicted_sect_speed = make_a_long_term_prediction(reanalysis, regressor_dict)
     #print(predicted_sect_speed)
+    #print(lt_df_prediction)
     plt.subplots()
     lt_df_prediction.plot()
     plt.title('Predicted windspeed for 20 years')
-    plt.show()
+    #plt.show()
