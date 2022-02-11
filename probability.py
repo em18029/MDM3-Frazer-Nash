@@ -1,4 +1,4 @@
-from get_data import main_get_data
+from power import main_power
 import numpy as np
 
 def distribution(powers):
@@ -15,6 +15,8 @@ def uncertainties():
 def calc_p90(powers):
 
     mu, sigma = distribution(powers)
+    print(mu)
+    print(sigma)
     p90 = mu - 1.282*sigma
 
     return p90
@@ -25,4 +27,6 @@ def calc_p50():
 
 if __name__ == '__main__':
 
-    p90 = calc_p90
+    powers = main_power()
+    p90 = calc_p90(powers)
+    print(p90)

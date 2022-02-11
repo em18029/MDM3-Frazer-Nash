@@ -1,8 +1,21 @@
 import pandas as pd
+import numpy as np
+from sklearn.impute import SimpleImputer
+
+def imputation(df):
+
+    df = df.replace([9999.99],np.nan)
+    print(df)
+    imp = SimpleImputer(strategy='mean')
+    df_mat = imp.fit_transform(df.values)
+    df = pd.DataFrame(df_mat, index=df.index, columns=df.columns)
+    
+    return df
 
 def make_datetime_index(df):
     # Assume we've got the date and the time, and can smoosh them together successfully.
     df.index = pd.to_datetime(dict(year=df.Year, month=df.Month, day=df.Day, hour=df.Hour, minute=df.Minute))
+    #df.index = pd.DatetimeIndex.strftime('%Y%m%d%H%M')
     df.drop(columns=['Decimal_Day','Day','Month','Year','Hour','Minute','Decimal_Year','Serial_Time','Epoch_Time'])
     return df
 
@@ -55,11 +68,19 @@ if __name__ == '__main__':
     # Load in measured data.
     measured_input_data = pd.read_excel("measurement_data_2015.xlsx")
     measurement = make_datetime_index(measured_input_data)
-    measurement = missing_data(measurement)
+    #measurement = missing_data(measurement)
+    meas = imputation(measurement)
+    #print(meas)
+    #measurement.to_csv('processed_measurement.csv', sep='\t')
 
     # Load in reanalysis data, and give it datetime columns.
     reanalysis_input_data = pd.read_excel('reanalysis_data_2002-2016.xlsx')
     reanalysis = make_datetime_index(reanalysis_input_data)
-    reanalysis = missing_data(reanalysis)
+    print(reanalysis)
+    #reanalysis = missing_data(reanalysis)
+    dat = imputation(reanalysis)
+    print(dat)
+    #reanalysis.to_csv('processed_reanalysis.csv',sep='\t')
+    #print(reanalysis.info)
 
     df = combine_the_short_term_and_long_term_speed_measurements(reanalysis, measurement)

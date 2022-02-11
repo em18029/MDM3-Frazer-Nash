@@ -1,5 +1,5 @@
 from get_data import main_get_data
-from example_script import main_industry_standard
+from MCP_script import main_MCP
 import matplotlib.pyplot as plt
 import numpy as np
 from cmath import pi
@@ -34,11 +34,17 @@ def calc_annual_yield(df):
 
     return ann_yield_list
 
+def main_power():
+
+    predictions = main_MCP()
+    annual_yield_mcp = calc_annual_yield(predictions)
+
+    return annual_yield_mcp
 
 if __name__ == '__main__':
 
     # Get datasets as dfs.
-    df, df_reanalysis = main_get_data()
-    predictions_standard, sect_predictions_standard = main_industry_standard(df, df_reanalysis)
-    annual_yield_standard = calc_annual_yield(predictions_standard)
-    generate_power_curve(df)
+    #df, df_reanalysis = main_get_data()
+    predictions = main_MCP()
+    annual_yield_mcp = calc_annual_yield(predictions)
+    #generate_power_curve(df)
