@@ -3,14 +3,12 @@ import numpy as np
 
 def distribution(powers):
 
+    #### Make a max uncertainty and min uncertainty and multiply/add/subtract to make two new lists. Combine for new std & mean.
+
     mu = np.mean(powers)
     sigma = np.std(powers)
-    
+  
     return mu, sigma
-
-def uncertainties():
-
-    return
 
 def calc_p90(powers):
 
