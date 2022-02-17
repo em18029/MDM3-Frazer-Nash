@@ -1,30 +1,26 @@
 from power import main_power
+from MCP_script import main_mcp
 import numpy as np
 
-def distribution(powers):
+def calc_p90(yields):
 
-    #### Make a max uncertainty and min uncertainty and multiply/add/subtract to make two new lists. Combine for new std & mean.
-
-    mu = np.mean(powers)
-    sigma = np.std(powers)
-  
-    return mu, sigma
-
-def calc_p90(powers):
-
-    mu, sigma = distribution(powers)
-    print(mu)
-    print(sigma)
-    p90 = mu - 1.282*sigma
+    p90 = np.percentile(yields, 10)
 
     return p90
 
-def calc_p50():
+def calc_p50(yields):
 
-    return
+    p50 = np.percentile(yields, 50)
+
+    return p50
 
 if __name__ == '__main__':
 
-    powers = main_power()
-    p90 = calc_p90(powers)
-    print(p90)
+    predictions_mcp = main_mcp()
+    yields_mcp = main_power(predictions_mcp)
+
+    p90_mcp = calc_p90(yields_mcp)
+    print(p90_mcp/10**9)
+
+    p50_mcp = calc_p50(yields_mcp)
+    print(p50_mcp/10**9)

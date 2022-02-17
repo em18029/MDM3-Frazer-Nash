@@ -1,42 +1,28 @@
 from get_data import main_get_data
-from new_model import main_nn
 from MCP_script import main_mcp
 import matplotlib.pyplot as plt
 import numpy as np
 from cmath import pi
 
-def generate_power_curve(df):
-
-    p = 1.225 #kg/m^3
-    D = 125 #metres
-    min_speed = 3
-    max_speed = 25
-    #speed = np.linspace(0,20,num=81)
-    speed = 56166.245
-    Power = ((speed**3)/2)*p*((pi*D**2)/4)
-    print(Power)
-    #Power = np.where(speed >= min_speed and speed <= max_speed,((speed**3)/2)*p*((pi*D**2)/4),0)
-    #plt.plot(speed,Power)
-    #plt.show()
-
-def simple_power(speeds):
+def simple_power(df):
 
     p = 1.225 #air density kg/m^3
-    D = 125 #turbine diameter metres
-    max_power = 3000 #Watts
+    D = 104 #turbine diameter metres
+    max_power = 3000000 #Watts
     cut_out_speed = 25 #m/s
     cut_in_speed = 3 #m/s
     efficiency = 0.35
 
-    power = ((speeds**3)/2)*p*((pi*D**2)/4)*efficiency
+    df['Wind_Speed'] = ((df['Wind_Speed']**3)/2)*p*((pi*D**2)/4)*efficiency
+    df.rename(columns={'Wind_Speed': 'Power'}, inplace=True)
 
-    return power
+    return df
 
 def convert_to_power(df):
 
     p = 1.225 #air density kg/m^3
-    D = 125 #turbine diameter metres
-    max_power = 3000 #Watts
+    D = 104 #turbine diameter metres
+    max_power = 3000000 #Watts
     cut_out_speed = 25 #m/s
     cut_in_speed = 3 #m/s
     availability = 0.97 #%
@@ -87,35 +73,41 @@ def calc_annual_yield(df):
     """
     
     ann_yields = df.groupby(
-    [df["datetime"].dt.year])["Power"].mean()
-    ann_yield_list = list(ann_yields['Power'])
+    [df["datetime"].dt.year])["Power"].sum()
+    
+    ann_yield_list = list(ann_yields)
 
     ann_yield_list = degradation(ann_yield_list)
 
     return ann_yield_list
 
 
-def main_power():
+def main_power(predictions):
 
-    predictions = main_mcp()
-    annual_yield_mcp = calc_annual_yield(predictions)
+    power_df = simple_power(predictions)
+    yields = calc_annual_yield(power_df)
 
-    return annual_yield_mcp
+    return yields
 
 if __name__ == '__main__':
 
 
-    trpr, tepr = main_nn()
+    #trpr, tepr = main_nn()
 
-    print(np.mean(trpr))
-    print(len(trpr))
+    #print(np.mean(trpr))
+    #print(len(trpr))
 
     # Get datasets as dfs.
     #df, df_reanalysis = main_get_data()
+
     predictions_df = main_mcp()
-    print(predictions_df)
+
+    #print(predictions_df)
     #predictions = list(predictions_df['Wind_Speed'])
     #annual_yield_mcp = calc_annual_yield(predictions)
-    power_df = convert_to_power(predictions_df)
+    #power_df = convert_to_power(predictions_df)
+
+    power_df = simple_power(predictions_df)
     yields = calc_annual_yield(power_df)
-    print(np.mean(yields))
+
+    #print(np.mean(yields))
