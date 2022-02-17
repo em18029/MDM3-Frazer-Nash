@@ -3,6 +3,7 @@
        all values of 9999.99 must be converted to nan"""
 
 import copy
+import math
 from scipy.stats import linregress
 import pandas as pd
 import numpy as np
@@ -11,6 +12,7 @@ from math import radians, degrees
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 
 
@@ -31,10 +33,18 @@ def clean_data(df):
 
 
 
-def hourly_measured_data(cleaned_data):
-    """Gets the hourly average of the mast data.
+
+
+def hourly_measured_windspeed(df):
+    """Gets the hourly average of the measured data.
        Do not use for wind direction"""
-    return cleaned_data.groupby(pd.Grouper(freq='H')).mean()
+    df = df.drop('Wind_Direction', 1)
+    df['datetime'] = df.index
+    df = df[['datetime', 'Wind_Speed']]
+    df = df.rename(columns={"Wind_Speed" : "Wind_Speed_meas"})
+    dfh = df.groupby(pd.Grouper(key='datetime', axis=0, 
+                      freq='h', sort=True)).mean('Wind_Speed')
+    return dfh
 
 
 
@@ -189,7 +199,7 @@ def predicted_speeds(df_meas, df_re):
        """
     slope, intercept, r_value, p_value, std_err = linregress(df_meas().mean_mast_speed.tolist(), df_meas().df_re['Wind_Speed'].tolist())
     df = extrapolated_reference_data()
-    df['site_speed'] = pd.Series((df['Wind_speed'] - intercept) / slope)
+    df['site_speed'] = pd.Series((df['Wind_Speed'] - intercept) / slope)
     df = df.drop('Wind_Direction', 1)
     return df
 
@@ -199,7 +209,6 @@ def predicted_speeds(df_meas, df_re):
 def mean_speeds_from_predicted(predicted_speeds):
     """Returns a dataframe with yearly mean windspeeds for:
         - measured at the reference site,
-        - extrapolated to 60m
         - predicted at the mast site
     """
     return predicted_speeds().groupby(predicted_speeds().index.year).mean()
@@ -207,15 +216,57 @@ def mean_speeds_from_predicted(predicted_speeds):
 
 
 
-def rms_error(predicted_speeds, hourly_mast_data, mean_mast_speed):
+
+def combine_meas_prediction_2015(predicted, df_hourly):
+    """Returns dataframe which consist of the
+       2015 predicted and measured windspeeds
+    """
+    df = pd.merge(predicted, df_hourly, how='outer', on='datetime')
+    dfh = df.dropna('index')
+    return dfh
+
+
+
+
+
+def rms_error(dfh):
     """Returns the Root Mean Square Error between
        predicted and measured speeds
     """
-    df = predicted_speeds.join(hourly_mast_data).dropna()
-    actual = df.mean_mast_speed.as_matrix()
-    predicted = df.site_speed.as_matrix()
-    rmse = np.sqrt(((actual - predicted) ** 2).mean())
+    actu_list = dfh['Wind_Speed'].values.tolist()
+    pred_list = dfh['Wind_Speed_meas'].values.tolist()
+    mse = mean_squared_error(actu_list, pred_list)
+    rmse = math.sqrt(mse)
     return rmse
+
+
+
+
+
+#def bias_error_degrees():
+#    """The problem is getting the average windspeed for the hour from the mast.
+#       This is where wrap around is an issue.
+#       The hourly data we have collected in joined_2012_data may contain
+#       incorrect means wind directions per hour
+#    """
+#    mast_direction = hourly_wind_direction().as_matrix()
+#    site_direction = joined_2012_data().wdir_deg.as_matrix()
+#    bias = (mast_direction - site_direction).mean()
+#    return bias
+
+
+
+
+
+
+def long_term_uncertainty(dfh):
+    """returns the standard deviation of the long term
+       predicted yearly means
+    """   
+    dfh = lt_pred.to_frame()
+    speeds = dfh['Wind_Speed'].values
+    stdev = np.std(speeds, axis=0)
+    return stdev
 
 
 
@@ -230,7 +281,8 @@ if __name__ == '__main__':
                        dtype={"Day":str, 'Month':str, 'Year':str, 'Hour':str, 'Minute':str})
     df_meas = make_datetime_index(measurement_data_2015)
     df_meas = clean_data(df_meas)   #   df_meas = dataframe of the measured data
-
+    df_hourly = hourly_measured_windspeed(df_meas)
+    
     # Load in reanalysis data
     reanalysis_data = pd.read_excel('reanalysis_data_2002-2016.xlsx',
                        header=0,
@@ -247,7 +299,7 @@ if __name__ == '__main__':
     #lt_df_prediction.plot()
     #plt.title('Predicted windspeed for 20 years')
     #plt.show()
-    lt_df_prediction.info()
+    #lt_df_prediction.info()
     """Clean predicted series into a dataframe"""
     lt_df_prediction = pd.DataFrame({'datetime':lt_df_prediction.index, '':lt_df_prediction.values})
     lt_df_prediction = lt_df_prediction.rename({'':'Wind_Speed'}, axis = 1)
@@ -257,8 +309,21 @@ if __name__ == '__main__':
     [lt_df_prediction["datetime"].dt.year])["Wind_Speed"].mean()
     print(lt_pred)
 
+    
+    """Write file with the predicted windspeed for the time period"""
+    #lt_df_prediction.to_csv("mcp_file.csv")
+
+
+    """Get combined dataframe for the 2015 predicted and measured windspeeds"""
+    df_2015 = combine_meas_prediction_2015(lt_df_prediction, df_hourly)
+
 
     """root mean squared is still bugging, I have more work to do on that"""
-    df_meas_speed = hourly_measured_data(df_meas)
-    rmse = rms_error(lt_df_prediction, df_meas, df_meas_speed)
-    print(rmse)
+    rmse = rms_error(df_2015)
+    print('root mean squared error =   {}'.format(rmse))
+
+
+    """Standard deviation of the predicted windspeed"""
+    stdev = long_term_uncertainty(lt_pred)
+    print('standard deviation =   {}'.format(stdev))
+
