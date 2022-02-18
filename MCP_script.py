@@ -206,16 +206,6 @@ def predicted_speeds(df_meas, df_re):
 
 
 
-def mean_speeds_from_predicted(predicted_speeds):
-    """Returns a dataframe with yearly mean windspeeds for:
-        - measured at the reference site,
-        - predicted at the mast site
-    """
-    return predicted_speeds().groupby(predicted_speeds().index.year).mean()
-
-
-
-
 
 def combine_meas_prediction_2015(predicted, df_hourly):
     """Returns dataframe which consist of the
@@ -263,7 +253,6 @@ def long_term_uncertainty(dfh):
     """returns the standard deviation of the long term
        predicted yearly means
     """   
-    dfh = lt_pred.to_frame()
     speeds = dfh['Wind_Speed'].values
     stdev = np.std(speeds, axis=0)
     return stdev
@@ -307,11 +296,14 @@ if __name__ == '__main__':
     """Get yearly mean windspeed from predicted data"""
     lt_pred = lt_df_prediction.groupby(
     [lt_df_prediction["datetime"].dt.year])["Wind_Speed"].mean()
+    lt_pred = pd.DataFrame({'datetime':lt_pred.index, '':lt_pred.values})
+    lt_pred = lt_pred.rename({'':'Wind_Speed'}, axis = 1)
     print(lt_pred)
 
     
     """Write file with the predicted windspeed for the time period"""
     #lt_df_prediction.to_csv("mcp_file.csv")
+    lt_pred.to_csv("mcp_yearly_predictions.csv")
 
 
     """Get combined dataframe for the 2015 predicted and measured windspeeds"""
