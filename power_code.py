@@ -65,8 +65,6 @@ def convert_to_power(df):
         if values > cut_out_speed:
             df = df.replace(values, 0)
 
-    #df[df['Wind_Speed'] > cut_out_speed, 'Wind_Speed'] = 0
-
     
     # For stability the turbine only cuts back in 1 hour after cut out.
     indexes = df[df['Wind_Speed'] > cut_out_speed].index.tolist()
@@ -78,11 +76,7 @@ def convert_to_power(df):
         if values < cut_in_speed:
             df = df.replace(values, 0)
 
-    #print(df)
-
-
-    #df['Wind_Speed'] = ((df['Wind_Speed']**3)/2)*p*((pi*D**2)/4)*availability*betz_limit*generator_efficiency
-    df['Wind_Speed'] = (1/2)*df['Wind_Speed']**3*p*pi*D**2*betz_limit
+    df['Wind_Speed'] = (1/2)*df['Wind_Speed']**3*p*pi*D**2*betz_limit*generator_efficiency*availability
     df.rename(columns={'Wind_Speed': 'Power'}, inplace=True)
     
 
@@ -125,7 +119,7 @@ def degradation(yields):
 
 def convert_to_gwh(df):
 
-    df['Power'] = df['Power']/1000000
+    df['Power'] = df['Power']/1000000000
     return df
 
 
@@ -135,7 +129,7 @@ def calc_annual_yield(df):
     """
     
     ann_yields = df.groupby(
-    [df["datetime"].dt.year])["Power"].mean()
+    [df["datetime"].dt.year])["Power"].sum()
     ann_yields_list = ann_yields.tolist()
 
     #ann_yield_list = degradation(ann_yield_list)
@@ -155,14 +149,23 @@ def calc_annual_stdev(df):
     return ann_stdev_list
 
 
+def stdev(yields):
+    mean_yield = np.array(yields)
+    stdev = np.std(mean_yield)
+    mean_yield = np.mean(mean_yield)
+
+    return stdev, mean_yield
+
+
+
 def main_power():
 
     predictions_df = read_clean_csv()
     power_df = convert_to_power(predictions_df)
     power_df = convert_to_gwh(power_df)
     yields = calc_annual_yield(power_df)
-    stdev = calc_annual_stdev(power_df)
-    return yields, stdev
+    stdeviation, mean_yield = stdev(yields)
+    return stdeviation, mean_yield
 
 if __name__ == '__main__':
 
@@ -173,13 +176,15 @@ if __name__ == '__main__':
     power_df = convert_to_power(predictions_df)
     power_df = convert_to_gwh(power_df)
     yields = calc_annual_yield(power_df)
+    #print(yields)
+    #yields = degradation(yields)
     #power_df.to_csv("power_prediction.csv")
     print('Mean yearly power output (GWH)')
     print(yields)
-    #variance = calc_annual_variance(power_df)
-    #print(variance)
-    stdev = calc_annual_stdev(power_df)
-    print('Standard Deviation in power generated each year')
-    print(stdev)
+    stdeviation, mean_yield = stdev(yields)
+    print('Standard Deviation in power generated ')
+    print(stdeviation)
+    print('Mean power output (GWH)')
+    print(mean_yield)
     #print(np.mean(yields))
-
+    
