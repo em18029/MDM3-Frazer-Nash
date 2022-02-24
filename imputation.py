@@ -12,6 +12,13 @@ def imputation(df):
     
     return df
 
+
+def interpolate(df):
+
+    df.interpolate(method='linear', inplace=True)
+
+    return df
+
 if __name__ == '__main__':
     
     #########   df = import csv here   ########

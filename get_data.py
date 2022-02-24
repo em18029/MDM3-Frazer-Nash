@@ -1,16 +1,5 @@
 import pandas as pd
-import numpy as np
-from sklearn.impute import SimpleImputer
-
-def imputation(df):
-
-    df = df.replace([9999.99],np.nan)
-    print(df)
-    imp = SimpleImputer(strategy='mean')
-    df_mat = imp.fit_transform(df.values)
-    df = pd.DataFrame(df_mat, index=df.index, columns=df.columns)
-    
-    return df
+from imputation import interpolate
 
 def make_datetime_index(df):
     # Assume we've got the date and the time, and can smoosh them together successfully.
@@ -37,26 +26,19 @@ def combine_the_short_term_and_long_term_speed_measurements(long_term_df, short_
     comb_df['direction']=direction.loc[direction.index.intersection(stdf.index)]
     comb_df = comb_df.dropna()
     return comb_df
-
-def missing_data(df):
-
-    ## Will find a better for missing data. Imputation.
-
-    df.drop(df[df['Temperature'] > 1000].index, inplace=True)
-
-    return df
+    
 
 def main_get_data():
     
     # Load in measured data.
     measured_input_data = pd.read_excel("measurement_data_2015.xlsx")
     measurement = make_datetime_index(measured_input_data)
-    measurement = missing_data(measurement)
+    measurement = interpolate(measurement)
 
     # Load in reanalysis data, and give it datetime columns.
     reanalysis_input_data = pd.read_excel('reanalysis_data_2002-2016.xlsx')
     reanalysis = make_datetime_index(reanalysis_input_data)
-    reanalysis = missing_data(reanalysis)
+    reanalysis = interpolate(reanalysis)
 
     df = combine_the_short_term_and_long_term_speed_measurements(reanalysis, measurement)
 
@@ -68,19 +50,11 @@ if __name__ == '__main__':
     # Load in measured data.
     measured_input_data = pd.read_excel("measurement_data_2015.xlsx")
     measurement = make_datetime_index(measured_input_data)
-    #measurement = missing_data(measurement)
-    meas = imputation(measurement)
-    #print(meas)
-    #measurement.to_csv('processed_measurement.csv', sep='\t')
+    measurement = interpolate(measurement)
 
     # Load in reanalysis data, and give it datetime columns.
     reanalysis_input_data = pd.read_excel('reanalysis_data_2002-2016.xlsx')
     reanalysis = make_datetime_index(reanalysis_input_data)
-    print(reanalysis)
-    #reanalysis = missing_data(reanalysis)
-    dat = imputation(reanalysis)
-    print(dat)
-    #reanalysis.to_csv('processed_reanalysis.csv',sep='\t')
-    #print(reanalysis.info)
+    reanalysis = interpolate(reanalysis)
 
     df = combine_the_short_term_and_long_term_speed_measurements(reanalysis, measurement)
